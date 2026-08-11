@@ -4,12 +4,13 @@
 - [Objective](#-objective)
 - [Tools & Environment](#️-tools--environment)
 - [Practical Tasks Executed](#-practical-tasks-executed)
-  - [1. Host Discovery](#1-host-discovery)
-  - [2. Port Scanning](#2-port-scanning)
-  - [3. Service & Version Detection](#3-service--version-detection)
-  - [4. OS Detection](#4-os-detection)
-  - [5. NSE Script Scanning](#5-nse-script-scanning)
-  - [6. Firewall Detection](#6-firewall-detection)
+  - [1. Host Discovery (Ping Sweep)](#1-host-discovery-ping-sweep)
+  - [2. TCP Port Scanning](#2-tcp-port-scanning)
+  - [3. UDP Port Scanning](#3-udp-port-scanning)
+  - [4. Service & Version Detection](#4-service--version-detection)
+  - [5. OS Detection](#5-os-detection)
+  - [6. Aggressive Scan & Output](#6-aggressive-scan--output)
+  - [7. NSE Script Scanning](#7-nse-script-scanning)
 - [Scan Report & Conclusion](#-scan-report--conclusion)
 
 ---
@@ -18,63 +19,71 @@
 This project demonstrates practical network reconnaissance using Nmap. The objective is to identify live hosts, discover open ports, detect running services, and map out the operating systems and potential vulnerabilities within a target network.
 
 ## 🛠️ Tools & Environment
-*   **Attacker Machine:** Kali Linux
-*   **Target Machine:** Metasploitable 2 / Windows VM *(Update this based on your lab)*
+*   **Attacker Machine:** Kali Linux (IP: `10.145.8.153`)
+*   **Target Machine:** Metasploitable 2 (IP: `10.145.8.91`)
 *   **Tool:** Nmap (Network Mapper)
 
 ---
 
 ## 🚀 Practical Tasks Executed
 
-### 1. Host Discovery
-Identified live hosts on the local subnet without performing a full port scan.
-*   **Command:** `nmap -sn [Target_IP_Subnet]`
+### 1. Host Discovery (Ping Sweep)
+Identified live hosts on the local subnet without performing a full port scan to remain stealthy.
+*   **Command:** `nmap -sn 10.145.8.0/24`
 *   **Result:**
 <br>
 
 ![Host Discovery](images/host-discovery.png)
 
-### 2. Port Scanning
-Scanned the target machine to identify all open TCP/UDP ports.
-*   **Command:** `nmap -p- [Target_IP]`
+### 2. TCP Port Scanning
+Scanned the target machine to identify all open TCP ports.
+*   **Command:** `nmap -p- 10.145.8.91`
 *   **Result:**
 <br>
 
-![Port Scanning](images/port-scanning.png)
+![TCP Port Scanning](images/tcp-port-scanning.png)
 
-### 3. Service & Version Detection
-Probed open ports to determine the exact service and software version running.
-*   **Command:** `nmap -sV [Target_IP]`
+### 3. UDP Port Scanning
+Targeted UDP ports to uncover services that are often missed by standard TCP scans (like DNS or SNMP).
+*   **Command:** `sudo nmap -sU -F 10.145.8.91` *(Used -F for a fast scan of top 100 ports)*
+*   **Result:**
+<br>
+
+![UDP Port Scanning](images/udp-scanning.png)
+
+### 4. Service & Version Detection
+Probed open ports to determine the exact service and software version running for vulnerability mapping.
+*   **Command:** `nmap -sV 10.145.8.91`
 *   **Result:**
 <br>
 
 ![Service Detection](images/service-detection.png)
 
-### 4. OS Detection
+### 5. OS Detection
 Utilized TCP/IP stack fingerprinting to guess the target's operating system.
-*   **Command:** `nmap -O [Target_IP]`
+*   **Command:** `sudo nmap -O 10.145.8.91`
 *   **Result:**
 <br>
 
 ![OS Detection](images/os-detection.png)
 
-### 5. NSE Script Scanning
-Ran default Nmap Scripting Engine (NSE) scripts to identify common vulnerabilities and misconfigurations.
-*   **Command:** `nmap -sC [Target_IP]`
+### 6. Aggressive Scan & Output
+Performed a comprehensive aggressive scan (OS, version, script, traceroute) and saved the output to a text file for reporting.
+*   **Command:** `nmap -A -oN scan_report.txt 10.145.8.91`
+*   **Result:**
+<br>
+
+![Aggressive Scan](images/aggressive-scan.png)
+
+### 7. NSE Script Scanning
+Ran default Nmap Scripting Engine (NSE) scripts to automatically identify common vulnerabilities and misconfigurations.
+*   **Command:** `nmap -sC 10.145.8.91`
 *   **Result:**
 <br>
 
 ![NSE Scripts](images/nse-scripts.png)
 
-### 6. Firewall Detection
-Sent fragmented packets and used specific scan types (like ACK or FIN scans) to determine if a firewall is filtering traffic.
-*   **Command:** `nmap -f [Target_IP]`
-*   **Result:**
-<br>
-
-![Firewall Detection](images/firewall-detection.png)
-
 ---
 
 ## 📊 Scan Report & Conclusion
-*(Write 2-3 sentences here summarizing what you found. Example: "The scan revealed a Linux-based target running outdated Apache and vsftpd services, indicating critical vulnerabilities that should be patched.")*
+*(Write 2-3 sentences here summarizing what you found. Example: "The Nmap reconnaissance on 10.145.8.91 revealed a highly vulnerable Metasploitable 2 instance running outdated vsftpd, Apache, and SSH services. The aggressive and NSE scans successfully identified multiple entry points for potential exploitation.")*
