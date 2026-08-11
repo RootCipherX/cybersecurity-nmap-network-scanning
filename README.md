@@ -12,6 +12,8 @@
   - [5. OS Detection](#5-os-detection)
   - [6. Aggressive Scan & Output](#6-aggressive-scan--output)
   - [7. NSE Script Scanning](#7-nse-script-scanning)
+  - [8. Firewall Detection (ACK Scan)](#8-firewall-detection-ack-scan)
+  - [9. Port State Reasoning](#9-port-state-reasoning)
 - [Scan Report & Conclusion](#-scan-report--conclusion)
 - [Authorization & Disclaimer](#️-authorization--disclaimer)
 
@@ -75,7 +77,7 @@ Identifying open ports is critical for determining the exposed attack surface. S
 **Result / Evidence:**
 <br>
 
-![TCP Port Scanning](images/tcp-port-scanning.jpg)
+![TCP Port Scanning](images/tcp-port-scanning.png)
 
 ---
 
@@ -115,7 +117,7 @@ An open port alone does not indicate a vulnerability. Version detection is the m
 **Result / Evidence:**
 <br>
 
-![Service Detection](images/service-detection.jpg)
+![Service Detection](images/service-detection.png)
 
 ---
 
@@ -135,7 +137,7 @@ Identifying the OS allows an assessor to narrow down the scope of potential expl
 **Result / Evidence:**
 <br>
 
-![OS Detection](images/os-detection.jpg)
+![OS Detection](images/os-detection.png)
 
 ---
 
@@ -155,7 +157,7 @@ Thorough documentation is a core requirement of professional security assessment
 **Result / Evidence:**
 <br>
 
-![Aggressive Scan](images/aggressive-scan.jpg)
+![Aggressive Scan](images/aggressive-scan.png)
 
 ---
 
@@ -174,12 +176,52 @@ NSE scripts go beyond simple version detection by actively attempting to interac
 **Result / Evidence:**
 <br>
 
-![NSE Scripts](images/nse-scripts.jpg)
+![NSE Scripts](images/nse-scripts.png)
+
+---
+
+### 8. Firewall Detection (ACK Scan)
+**Objective:** To determine if a stateful firewall is filtering traffic to the target's critical ports.
+
+**Command Executed:**
+`sudo nmap -sA -p 21,22,23,25,53,80,111,139,445 10.145.8.91`
+
+**Command Breakdown:**
+*   `sudo`: Elevated privileges required for raw packet manipulation.
+*   `-sA`: Performs a TCP ACK scan. Instead of trying to open a connection, it sends an ACK packet to see if a firewall drops it or if the target responds with an RST (Reset) packet.
+*   `-p`: Specifies the comma-separated list of previously discovered open ports to test.
+
+**Security Relevance:**
+ACK scans do not determine if a port is "open" or "closed," but rather if it is "filtered" or "unfiltered." This allows the assessor to map out the network's firewall rulesets and plan evasion techniques if defensive measures are actively blocking traffic.
+
+**Result / Evidence:**
+<br>
+
+![Firewall Detection](images/firewall-detection.png)
+
+---
+
+### 9. Port State Reasoning
+**Objective:** To validate exactly *why* Nmap classified a port as open, closed, or filtered by analyzing the raw packet response.
+
+**Command Executed:**
+`nmap --reason 10.145.8.91`
+
+**Command Breakdown:**
+*   `--reason`: Forces Nmap to display the exact packet type or network condition (e.g., `syn-ack`, `conn-refused`, `no-response`) that caused it to assign a specific state to a port.
+
+**Security Relevance:**
+This demonstrates a deep, engineering-level understanding of the TCP/IP stack. By analyzing the literal response packets, an assessor can troubleshoot false positives, understand unusual network behavior, and verify that the target system is responding exactly as expected.
+
+**Result / Evidence:**
+<br>
+
+![Port Reason](images/port-reason.png)
 
 ---
 
 ## 📊 Scan Report & Conclusion
-The comprehensive network scanning phase successfully mapped the topology and attack surface of the authorized Metasploitable 2 target (`10.145.8.91`). The scans revealed a highly vulnerable Linux-based system exposing multiple critical services, including FTP (vsftpd 2.3.4), SSH, Telnet, and an insecure Apache web server. The integration of version detection and NSE scripting confirmed several severe misconfigurations, such as anonymous FTP login access. These results provide the foundational intelligence required to proceed to the vulnerability assessment and exploitation phases.
+The comprehensive network scanning phase successfully mapped the topology and attack surface of the authorized Metasploitable 2 target (`10.145.8.91`). The scans revealed a highly vulnerable Linux-based system exposing multiple critical services, including FTP (vsftpd 2.3.4), SSH, Telnet, and an insecure Apache web server. The integration of version detection and NSE scripting confirmed several severe misconfigurations, such as anonymous FTP login access. Additionally, ACK scanning confirmed the absence of stateful firewall filtering on the tested ports. These results provide the foundational intelligence required to proceed to the vulnerability assessment and exploitation phases.
 
 ---
 
