@@ -14,8 +14,8 @@
   - [7. NSE Script Scanning](#7-nse-script-scanning)
   - [8. Firewall Detection (ACK Scan)](#8-firewall-detection-ack-scan)
   - [9. Port State Reasoning](#9-port-state-reasoning)
-- [Scan Report & Conclusion](#-scan-report--conclusion)
-- [Authorization & Disclaimer](#️-authorization--disclaimer)
+- [Executive Summary & Conclusion](#-executive-summary--conclusion)
+- [Ethical Guidelines & Disclaimer](#️-ethical-guidelines--disclaimer)
 
 ---
 
@@ -47,11 +47,17 @@ To perform comprehensive network reconnaissance against an authorized Metasploit
 
 **Command Breakdown:**
 *   `nmap`: The network discovery and security auditing utility.
-*   `-sn`: Instructs Nmap to perform a "Ping Scan" only. It disables port scanning, relying on ICMP echoes and ARP requests to determine which hosts are online.
+*   `-sn`: Instructs Nmap to perform a "Ping Scan" only, relying on ICMP echoes and ARP requests.
 *   `10.145.8.0/24`: The target subnet block.
 
+**Methodology:** 
+I initiated a subnet-wide sweep to map out active devices without engaging port-specific probes. This method is utilized to efficiently locate targets while minimizing network traffic and IDS (Intrusion Detection System) alerts.
+
+**Observation:** 
+The scan successfully identified 4 active hosts on the `10.145.8.0/24` subnet. The primary target machine (`10.145.8.91`) was confirmed to be online with a low latency of 0.0014s, allowing me to narrow the scope of deeper enumeration exclusively to this IP.
+
 **Security Relevance:**
-Host discovery is the first step in footprinting a network. By disabling port scanning, the assessor generates less network traffic, making the reconnaissance phase stealthier while successfully mapping active devices on the segment.
+Host discovery is the critical first step in footprinting a network, ensuring that time and packets are not wasted scanning dead IP addresses.
 
 **Result / Evidence:**
 <br>
@@ -68,11 +74,16 @@ Host discovery is the first step in footprinting a network. By disabling port sc
 
 **Command Breakdown:**
 *   `nmap`: The network scanning utility.
-*   `-p-`: Instructs Nmap to aggressively scan all 65,535 TCP ports instead of defaulting to the top 1,000 most common ports.
-*   `10.145.8.91`: The authorized Metasploitable target IP.
+*   `-p-`: Instructs Nmap to aggressively scan all 65,535 TCP ports instead of defaulting to the top 1,000.
+
+**Methodology:** 
+Targeting the confirmed active host, I executed a full TCP port scan across the entire possible port range. I specifically omitted stealth flags to observe how the target handles standard TCP connection attempts across all ports.
+
+**Observation:** 
+The target revealed a massive attack surface. Nmap reported 65,505 closed ports, but highlighted a significant number of open standard ports (e.g., FTP on 21, SSH on 22, HTTP on 80, SMB on 445). Additionally, several high-numbered/non-standard ports were discovered open.
 
 **Security Relevance:**
-Identifying open ports is critical for determining the exposed attack surface. Scanning the entire port range ensures that services hidden on non-standard, high-numbered ports (often used for backdoors or internal testing) are not missed during the assessment.
+Scanning the entire port range ensures that hidden services or malicious backdoors running on obscure, high-numbered ports are not missed during the reconnaissance phase.
 
 **Result / Evidence:**
 <br>
@@ -88,12 +99,18 @@ Identifying open ports is critical for determining the exposed attack surface. S
 `sudo nmap -sU -F 10.145.8.91`
 
 **Command Breakdown:**
-*   `sudo`: Runs Nmap with elevated privileges, which is required to craft and send raw UDP packets.
+*   `sudo`: Runs Nmap with elevated privileges, required for raw UDP packet crafting.
 *   `-sU`: Instructs Nmap to perform a UDP scan.
-*   `-F`: Enables "Fast mode," scanning the top 100 most common UDP ports to optimize scan time.
+*   `-F`: Enables "Fast mode," scanning the top 100 most common UDP ports.
+
+**Methodology:** 
+Because UDP is a connectionless protocol, scanning can be incredibly slow. I utilized the `-F` flag to rapidly probe the most common UDP services, sending protocol-specific payloads to trigger a response.
+
+**Observation:** 
+The scan successfully identified key UDP services, notably port 53 (Domain/DNS), 111 (rpcbind), and 2049 (nfs). It also detected filtered ports like DHCP and NetBIOS, which expands the target's attack surface beyond typical TCP web or file transfer services.
 
 **Security Relevance:**
-Many assessors focus purely on TCP, but critical infrastructure services (like DNS, DHCP, and SNMP) rely on UDP. Identifying exposed UDP services is essential for discovering vulnerabilities that are often overlooked by standard perimeter defenses.
+Critical infrastructure services often rely on UDP. Identifying exposed UDP services is essential for discovering vulnerabilities that are frequently overlooked by administrators who focus solely on securing TCP traffic.
 
 **Result / Evidence:**
 <br>
@@ -111,13 +128,19 @@ Many assessors focus purely on TCP, but critical infrastructure services (like D
 **Command Breakdown:**
 *   `-sV`: Probes open ports to determine service and version info by analyzing the banners and responses returned by the applications.
 
+**Methodology:** 
+Having mapped the open TCP ports, I re-scanned them using version detection. Nmap established connections with the open ports and interrogated the service banners to extract software names and release versions.
+
+**Observation:** 
+The scan extracted highly actionable intelligence. I identified severely outdated and notoriously vulnerable software versions, such as `vsftpd 2.3.4` (known for a malicious backdoor) and `Apache httpd 2.2.8`. 
+
 **Security Relevance:**
-An open port alone does not indicate a vulnerability. Version detection is the most critical step for vulnerability mapping, as it allows the assessor to cross-reference the running software (e.g., vsftpd 2.3.4) against databases of known CVEs (Common Vulnerabilities and Exposures).
+An open port alone does not equal a vulnerability. Version detection is the most critical step for vulnerability mapping, as it allows the assessor to cross-reference the running software against the CVE (Common Vulnerabilities and Exposures) database.
 
 **Result / Evidence:**
 <br>
 
-![Service Detection](images/service-detection.png)
+![Service Detection](images/service-detection.jpg)
 
 ---
 
@@ -129,15 +152,21 @@ An open port alone does not indicate a vulnerability. Version detection is the m
 
 **Command Breakdown:**
 *   `sudo`: Requires root privileges to send custom TCP and UDP packets.
-*   `-O`: Enables operating system detection by analyzing the specific ways the target's TCP/IP stack responds to various probes (such as sequence predictability and initial window size).
+*   `-O`: Enables operating system detection by analyzing the specific ways the target's TCP/IP stack responds to various probes.
+
+**Methodology:** 
+I utilized Nmap's TCP/IP stack fingerprinting engine. By sending a series of malformed and standard packets, Nmap analyzed the target's responses (like TCP sequence predictability and IP ID generation) and compared them to its internal OS database.
+
+**Observation:** 
+Nmap successfully fingerprinted the target as running a Linux kernel (specifically identified within the 2.6.9 - 2.6.33 range). The network distance was logged at exactly 1 hop, confirming it is directly adjacent on the local lab network.
 
 **Security Relevance:**
-Identifying the OS allows an assessor to narrow down the scope of potential exploits. A payload designed for a Windows kernel will fail against a Linux target; precise OS detection ensures that subsequent exploitation attempts are targeted and effective.
+Identifying the exact OS architecture is crucial for exploit selection. A payload designed for a Windows kernel will fail against a Linux target; precise OS detection ensures subsequent exploitation attempts are targeted and effective.
 
 **Result / Evidence:**
 <br>
 
-![OS Detection](images/os-detection.png)
+![OS Detection](images/os-detection.jpg)
 
 ---
 
@@ -151,13 +180,23 @@ Identifying the OS allows an assessor to narrow down the scope of potential expl
 *   `-A`: Enables "Aggressive" mode, which bundles OS detection, version detection, script scanning, and traceroute into a single command.
 *   `-oN scan_report.txt`: Outputs the scan results in a normal, human-readable format to a text file for documentation.
 
+**Methodology:** 
+I executed an aggressive, all-in-one scan against the target to pull maximum intelligence. Crucially, I utilized the output flag to pipe the terminal results directly into a permanent text file for off-line analysis and report generation.
+
+**Observation:** 
+The comprehensive output yielded deep technical insights that standard scans missed, including SSH host keys, precise FTP server configurations, and SSL/TLS certificate details (showing an expired certificate from 2010).
+
 **Security Relevance:**
-Thorough documentation is a core requirement of professional security assessments. Saving the output ensures that the assessor has an immutable record of the network state at the time of the scan for use in the final penetration testing report.
+Thorough documentation is a core requirement of professional security engineering. Saving the output ensures that the assessor has an immutable, exact record of the network state at the time of the scan.
 
 **Result / Evidence:**
 <br>
 
-![Aggressive Scan](images/aggressive-scan.png)
+![Aggressive Scan](images/aggressive-scan1.png)
+
+![Aggressive Scan](images/aggressive-scan2.png)
+
+![Aggressive Scan](images/aggressive-scan3.png)
 
 ---
 
@@ -170,13 +209,23 @@ Thorough documentation is a core requirement of professional security assessment
 **Command Breakdown:**
 *   `-sC`: Runs a scan using the default set of NSE (Nmap Scripting Engine) scripts. This is equivalent to `--script=default`.
 
+**Methodology:** 
+I engaged the Nmap Scripting Engine to go beyond passive version detection. Nmap ran a suite of safe, default scripts that actively attempted to interact with the target's services to check for known misconfigurations.
+
+**Observation:** 
+The NSE scripts provided immediate, actionable findings. Most notably, the script interacting with port 21 confirmed that the FTP server allows "Anonymous FTP login" (FTP code 230). 
+
 **Security Relevance:**
-NSE scripts go beyond simple version detection by actively attempting to interact with the services (e.g., checking for anonymous FTP access or default credentials). This provides immediate, actionable intelligence on "low-hanging fruit" vulnerabilities.
+NSE scripts automate the discovery of "low-hanging fruit." Confirming issues like anonymous logins or default credentials saves time and provides an immediate entry point into the system without requiring complex exploitation.
 
 **Result / Evidence:**
 <br>
 
-![NSE Scripts](images/nse-scripts.png)
+![NSE Scripts](images/nse-scripts1.png)
+
+![NSE Scripts](images/nse-scripts2.png)
+
+![NSE Scripts](images/nse-scripts3.png)
 
 ---
 
@@ -188,11 +237,17 @@ NSE scripts go beyond simple version detection by actively attempting to interac
 
 **Command Breakdown:**
 *   `sudo`: Elevated privileges required for raw packet manipulation.
-*   `-sA`: Performs a TCP ACK scan. Instead of trying to open a connection, it sends an ACK packet to see if a firewall drops it or if the target responds with an RST (Reset) packet.
+*   `-sA`: Performs a TCP ACK scan. It sends an ACK packet to see if a firewall drops it or if the target responds with an RST (Reset) packet.
 *   `-p`: Specifies the comma-separated list of previously discovered open ports to test.
 
+**Methodology:** 
+I constructed an ACK scan targeting the most critical exposed ports. Because ACK packets do not initiate a new connection, a stateful firewall will typically drop them (resulting in a "filtered" state), while an unfiltered machine will respond with a TCP RST.
+
+**Observation:** 
+All tested ports returned an "unfiltered" state. This explicitly indicates that there is no stateful firewall, iptables rule, or IDS actively blocking or dropping packets between the Kali attack machine and the target services.
+
 **Security Relevance:**
-ACK scans do not determine if a port is "open" or "closed," but rather if it is "filtered" or "unfiltered." This allows the assessor to map out the network's firewall rulesets and plan evasion techniques if defensive measures are actively blocking traffic.
+Mapping the defensive perimeter is critical. Understanding whether ports are "open" versus "filtered" allows an assessor to deduce the network's firewall rulesets and plan evasion techniques if defensive measures are active.
 
 **Result / Evidence:**
 <br>
@@ -210,8 +265,14 @@ ACK scans do not determine if a port is "open" or "closed," but rather if it is 
 **Command Breakdown:**
 *   `--reason`: Forces Nmap to display the exact packet type or network condition (e.g., `syn-ack`, `conn-refused`, `no-response`) that caused it to assign a specific state to a port.
 
+**Methodology:** 
+To verify the integrity of the scan data, I utilized the `--reason` flag. This forced Nmap to expose the underlying TCP/IP handshake logic it used to determine the port state, rather than just trusting the abstracted output.
+
+**Observation:** 
+Nmap explicitly reported `syn-ack` as the reason for classifying the ports as open. This confirms that the target system is actively receiving my SYN packets and completing the second step of the three-way handshake normally.
+
 **Security Relevance:**
-This demonstrates a deep, engineering-level understanding of the TCP/IP stack. By analyzing the literal response packets, an assessor can troubleshoot false positives, understand unusual network behavior, and verify that the target system is responding exactly as expected.
+Relying on the `--reason` flag demonstrates a deep, engineering-level understanding of network protocols. By analyzing literal response packets, an assessor can troubleshoot false positives and verify that network appliances aren't spoofing responses.
 
 **Result / Evidence:**
 <br>
@@ -220,10 +281,16 @@ This demonstrates a deep, engineering-level understanding of the TCP/IP stack. B
 
 ---
 
-## 📊 Scan Report & Conclusion
-The comprehensive network scanning phase successfully mapped the topology and attack surface of the authorized Metasploitable 2 target (`10.145.8.91`). The scans revealed a highly vulnerable Linux-based system exposing multiple critical services, including FTP (vsftpd 2.3.4), SSH, Telnet, and an insecure Apache web server. The integration of version detection and NSE scripting confirmed several severe misconfigurations, such as anonymous FTP login access. Additionally, ACK scanning confirmed the absence of stateful firewall filtering on the tested ports. These results provide the foundational intelligence required to proceed to the vulnerability assessment and exploitation phases.
+## 📊 Executive Summary & Conclusion
+The reconnaissance phase successfully mapped the internal lab target (`10.145.8.91`), revealing a Linux system with a massive, intentionally insecure footprint. By systematically progressing from host discovery to deep version and NSE script enumeration, I identified multiple critical exposures. 
+
+The most alarming findings include highly outdated daemons—such as `vsftpd 2.3.4`—and severe misconfigurations, like unauthenticated anonymous FTP access. Furthermore, the ACK scan confirmed a complete lack of stateful firewall filtering on critical ports. From a network engineering perspective, the broad range of exposed TCP and UDP services combined with the lack of perimeter filtering highlights a complete failure of defense-in-depth architecture. 
+
+The footprinting data gathered in this exercise provides a complete blueprint of the target's attack surface, perfectly setting the stage for the vulnerability assessment and exploitation phases.
 
 ---
 
-## ⚖️ Authorization & Disclaimer
-This activity was performed against an authorized, locally hosted virtual laboratory environment containing a deliberately vulnerable Metasploitable target. This project was conducted strictly for educational and cybersecurity training purposes. Network scanning, reconnaissance, and penetration testing should **only** be performed against systems for which explicit, written authorization has been obtained.
+## ⚖️ Ethical Guidelines & Disclaimer
+This project was conducted entirely within a private, self-hosted Virtual Machine laboratory network. The target machine (Metasploitable 2) is intentionally designed to be highly vulnerable to serve as a safe environment for educational research and cybersecurity skill development. 
+
+All scanning, enumeration, and testing were performed strictly within this isolated, authorized environment. **I do not endorse, encourage, or perform unauthorized network scanning, reconnaissance, or penetration testing against public, corporate, or third-party infrastructure without explicit, written legal consent.**
