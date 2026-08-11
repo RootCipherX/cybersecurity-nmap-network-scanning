@@ -1,6 +1,6 @@
-# 🔍 Cybersecurity: Nmap Network Scanning
+# Cybersecurity: Nmap Network Scanning
 
-## 📖 Table of Contents
+## Table of Contents
 - [Introduction](#-introduction)
 - [Objective](#-objective)
 - [Lab Environment](#️-lab-environment)
@@ -19,12 +19,12 @@
 
 ---
 
-## 📖 Introduction
+## Introduction
 Port scanning and network mapping are foundational phases of network reconnaissance. Before any vulnerability assessment or penetration test can occur, an assessor must understand the topology of the target network and the exact services exposed to the network layer. 
 
 Nmap (Network Mapper) is an industry-standard, open-source utility used to discover hosts, open ports, running services, and operating system details. In this practical lab, Nmap is utilized to systematically map the attack surface of an authorized target to gather footprinting data required for subsequent security testing.
 
-## 🎯 Objective
+## Objective
 To perform comprehensive network reconnaissance against an authorized Metasploitable laboratory target. The objective is to identify live hosts, discover exposed TCP/UDP ports, enumerate service versions, and detect potential vulnerabilities using the Nmap Scripting Engine (NSE).
 
 ## 🛠️ Lab Environment
@@ -37,7 +37,7 @@ To perform comprehensive network reconnaissance against an authorized Metasploit
 
 ---
 
-## 🚀 Practical Tasks Executed
+## Practical Tasks Executed
 
 ### 1. Host Discovery (Ping Sweep)
 **Objective:** To identify live hosts on the local subnet without performing a full, noisy port scan.
@@ -140,7 +140,7 @@ An open port alone does not equal a vulnerability. Version detection is the most
 **Result / Evidence:**
 <br>
 
-![Service Detection](images/service-detection.jpg)
+![Service Detection](images/service-detection.png)
 
 ---
 
@@ -166,7 +166,7 @@ Identifying the exact OS architecture is crucial for exploit selection. A payloa
 **Result / Evidence:**
 <br>
 
-![OS Detection](images/os-detection.jpg)
+![OS Detection](images/os-detection.png)
 
 ---
 
@@ -281,7 +281,7 @@ Relying on the `--reason` flag demonstrates a deep, engineering-level understand
 
 ---
 
-## 📊 Executive Summary & Conclusion
+## Executive Summary & Conclusion
 The reconnaissance phase successfully mapped the internal lab target (`10.145.8.91`), revealing a Linux system with a massive, intentionally insecure footprint. By systematically progressing from host discovery to deep version and NSE script enumeration, I identified multiple critical exposures. 
 
 The most alarming findings include highly outdated daemons—such as `vsftpd 2.3.4`—and severe misconfigurations, like unauthenticated anonymous FTP access. Furthermore, the ACK scan confirmed a complete lack of stateful firewall filtering on critical ports. From a network engineering perspective, the broad range of exposed TCP and UDP services combined with the lack of perimeter filtering highlights a complete failure of defense-in-depth architecture. 
@@ -290,7 +290,7 @@ The footprinting data gathered in this exercise provides a complete blueprint of
 
 ---
 
-## ⚖️ Ethical Guidelines & Disclaimer
+## Ethical Guidelines & Disclaimer
 This project was conducted entirely within a private, self-hosted Virtual Machine laboratory network. The target machine (Metasploitable 2) is intentionally designed to be highly vulnerable to serve as a safe environment for educational research and cybersecurity skill development. 
 
 All scanning, enumeration, and testing were performed strictly within this isolated, authorized environment. **I do not endorse, encourage, or perform unauthorized network scanning, reconnaissance, or penetration testing against public, corporate, or third-party infrastructure without explicit, written legal consent.**
