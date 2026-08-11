@@ -1,11 +1,12 @@
 # 🔍 Cybersecurity: Nmap Network Scanning
 
 ## 📖 Table of Contents
+- [Introduction](#-introduction)
 - [Objective](#-objective)
 - [Lab Environment](#️-lab-environment)
 - [Practical Tasks Executed](#-practical-tasks-executed)
   - [1. Host Discovery (Ping Sweep)](#1-host-discovery-ping-sweep)
-  - [2. TCP SYN Port Scanning](#2-tcp-syn-port-scanning)
+  - [2. Comprehensive TCP Port Scanning](#2-comprehensive-tcp-port-scanning)
   - [3. UDP Port Scanning](#3-udp-port-scanning)
   - [4. Service & Version Detection](#4-service--version-detection)
   - [5. OS Detection](#5-os-detection)
@@ -16,96 +17,171 @@
 
 ---
 
+## 📖 Introduction
+Port scanning and network mapping are foundational phases of network reconnaissance. Before any vulnerability assessment or penetration test can occur, an assessor must understand the topology of the target network and the exact services exposed to the network layer. 
+
+Nmap (Network Mapper) is an industry-standard, open-source utility used to discover hosts, open ports, running services, and operating system details. In this practical lab, Nmap is utilized to systematically map the attack surface of an authorized target to gather footprinting data required for subsequent security testing.
+
 ## 🎯 Objective
-This project demonstrates practical network reconnaissance using Nmap. The objective is to identify live hosts, discover open ports, detect running services, and map out the operating systems and potential vulnerabilities within a target network.
+To perform comprehensive network reconnaissance against an authorized Metasploitable laboratory target. The objective is to identify live hosts, discover exposed TCP/UDP ports, enumerate service versions, and detect potential vulnerabilities using the Nmap Scripting Engine (NSE).
 
 ## 🛠️ Lab Environment
 *   **Operating System:** Kali Linux
 *   **Attacker IP:** `10.145.8.153`
-*   **Target Environment:** Local VMware/VirtualBox laboratory network
+*   **Target Environment:** Local Virtual Laboratory Network
 *   **Target System:** Metasploitable 2
 *   **Target IP:** `10.145.8.91`
-*   **Tool Used:** Nmap
+*   **Tool Used:** Nmap 7.99
 
 ---
 
 ## 🚀 Practical Tasks Executed
 
 ### 1. Host Discovery (Ping Sweep)
-Identified live hosts on the local subnet without performing a full port scan to remain stealthy.
-*   **Command:** `nmap -sn 10.145.8.0/24`
-*   **Result:**
-<br>
-
-![Host Discovery](images/host-discovery.png)
-
-### 2. TCP SYN Port Scanning
-**Objective:** To identify the exposed TCP attack surface of the target by finding open network ports.
+**Objective:** To identify live hosts on the local subnet without performing a full, noisy port scan.
 
 **Command Executed:**
-`sudo nmap -sS -p- 10.145.8.91`
+`nmap -sn 10.145.8.0/24`
 
 **Command Breakdown:**
-*   `sudo`: Runs Nmap with elevated privileges required to craft and send raw network packets.
-*   `nmap`: The network discovery and security auditing tool.
-*   `-sS`: Performs a TCP SYN scan (Stealth Scan). It sends a SYN packet and waits for a response, but drops the connection before completing the full TCP handshake.
-*   `-p-`: Instructs Nmap to aggressively scan all 65,535 TCP ports instead of just the top 1,000.
-*   `10.145.8.91`: The authorized Metasploitable target IP.
+*   `nmap`: The network discovery and security auditing utility.
+*   `-sn`: Instructs Nmap to perform a "Ping Scan" only. It disables port scanning, relying on ICMP echoes and ARP requests to determine which hosts are online.
+*   `10.145.8.0/24`: The target subnet block.
 
 **Security Relevance:**
-Identifying open ports is a critical phase of reconnaissance. It allows an assessor to determine the exposed attack surface, spot services running on unexpected ports, and prioritize which services require deeper version enumeration. 
+Host discovery is the first step in footprinting a network. By disabling port scanning, the assessor generates less network traffic, making the reconnaissance phase stealthier while successfully mapping active devices on the segment.
 
 **Result / Evidence:**
 <br>
 
-![TCP Port Scanning](images/tcp-port-scanning.png)
+![Host Discovery](images/host-discovery.png)
+
+---
+
+### 2. Comprehensive TCP Port Scanning
+**Objective:** To identify the complete exposed TCP attack surface of the target system.
+
+**Command Executed:**
+`nmap -p- 10.145.8.91`
+
+**Command Breakdown:**
+*   `nmap`: The network scanning utility.
+*   `-p-`: Instructs Nmap to aggressively scan all 65,535 TCP ports instead of defaulting to the top 1,000 most common ports.
+*   `10.145.8.91`: The authorized Metasploitable target IP.
+
+**Security Relevance:**
+Identifying open ports is critical for determining the exposed attack surface. Scanning the entire port range ensures that services hidden on non-standard, high-numbered ports (often used for backdoors or internal testing) are not missed during the assessment.
+
+**Result / Evidence:**
+<br>
+
+![TCP Port Scanning](images/tcp-port-scanning.jpg)
+
+---
 
 ### 3. UDP Port Scanning
-Targeted UDP ports to uncover services that are often missed by standard TCP scans (like DNS or SNMP).
-*   **Command:** `sudo nmap -sU -F 10.145.8.91`
-*   **Result:**
+**Objective:** To discover open UDP ports and connectionless services running on the target.
+
+**Command Executed:**
+`sudo nmap -sU -F 10.145.8.91`
+
+**Command Breakdown:**
+*   `sudo`: Runs Nmap with elevated privileges, which is required to craft and send raw UDP packets.
+*   `-sU`: Instructs Nmap to perform a UDP scan.
+*   `-F`: Enables "Fast mode," scanning the top 100 most common UDP ports to optimize scan time.
+
+**Security Relevance:**
+Many assessors focus purely on TCP, but critical infrastructure services (like DNS, DHCP, and SNMP) rely on UDP. Identifying exposed UDP services is essential for discovering vulnerabilities that are often overlooked by standard perimeter defenses.
+
+**Result / Evidence:**
 <br>
 
 ![UDP Port Scanning](images/udp-scanning.png)
 
+---
+
 ### 4. Service & Version Detection
-Probed open ports to determine the exact service and software version running for vulnerability mapping.
-*   **Command:** `nmap -sV 10.145.8.91`
-*   **Result:**
+**Objective:** To enumerate the exact software and versions running behind the discovered open ports.
+
+**Command Executed:**
+`nmap -sV 10.145.8.91`
+
+**Command Breakdown:**
+*   `-sV`: Probes open ports to determine service and version info by analyzing the banners and responses returned by the applications.
+
+**Security Relevance:**
+An open port alone does not indicate a vulnerability. Version detection is the most critical step for vulnerability mapping, as it allows the assessor to cross-reference the running software (e.g., vsftpd 2.3.4) against databases of known CVEs (Common Vulnerabilities and Exposures).
+
+**Result / Evidence:**
 <br>
 
-![Service Detection](images/service-detection.png)
+![Service Detection](images/service-detection.jpg)
+
+---
 
 ### 5. OS Detection
-Utilized TCP/IP stack fingerprinting to guess the target's operating system.
-*   **Command:** `sudo nmap -O 10.145.8.91`
-*   **Result:**
+**Objective:** To fingerprint the target's underlying operating system.
+
+**Command Executed:**
+`sudo nmap -O 10.145.8.91`
+
+**Command Breakdown:**
+*   `sudo`: Requires root privileges to send custom TCP and UDP packets.
+*   `-O`: Enables operating system detection by analyzing the specific ways the target's TCP/IP stack responds to various probes (such as sequence predictability and initial window size).
+
+**Security Relevance:**
+Identifying the OS allows an assessor to narrow down the scope of potential exploits. A payload designed for a Windows kernel will fail against a Linux target; precise OS detection ensures that subsequent exploitation attempts are targeted and effective.
+
+**Result / Evidence:**
 <br>
 
-![OS Detection](images/os-detection.png)
+![OS Detection](images/os-detection.jpg)
+
+---
 
 ### 6. Aggressive Scan & Output
-Performed a comprehensive aggressive scan (OS, version, script, traceroute) and saved the output to a text file for reporting.
-*   **Command:** `nmap -A -oN scan_report.txt 10.145.8.91`
-*   **Result:**
+**Objective:** To perform a comprehensive, multi-layered scan and document the results for reporting.
+
+**Command Executed:**
+`nmap -A -oN scan_report.txt 10.145.8.91`
+
+**Command Breakdown:**
+*   `-A`: Enables "Aggressive" mode, which bundles OS detection, version detection, script scanning, and traceroute into a single command.
+*   `-oN scan_report.txt`: Outputs the scan results in a normal, human-readable format to a text file for documentation.
+
+**Security Relevance:**
+Thorough documentation is a core requirement of professional security assessments. Saving the output ensures that the assessor has an immutable record of the network state at the time of the scan for use in the final penetration testing report.
+
+**Result / Evidence:**
 <br>
 
-![Aggressive Scan](images/aggressive-scan.png)
+![Aggressive Scan](images/aggressive-scan.jpg)
+
+---
 
 ### 7. NSE Script Scanning
-Ran default Nmap Scripting Engine (NSE) scripts to automatically identify common vulnerabilities and misconfigurations.
-*   **Command:** `nmap -sC 10.145.8.91`
-*   **Result:**
+**Objective:** To automate the detection of common vulnerabilities and misconfigurations using Nmap's built-in scripting engine.
+
+**Command Executed:**
+`nmap -sC 10.145.8.91`
+
+**Command Breakdown:**
+*   `-sC`: Runs a scan using the default set of NSE (Nmap Scripting Engine) scripts. This is equivalent to `--script=default`.
+
+**Security Relevance:**
+NSE scripts go beyond simple version detection by actively attempting to interact with the services (e.g., checking for anonymous FTP access or default credentials). This provides immediate, actionable intelligence on "low-hanging fruit" vulnerabilities.
+
+**Result / Evidence:**
 <br>
 
-![NSE Scripts](images/nse-scripts.png)
+![NSE Scripts](images/nse-scripts.jpg)
 
 ---
 
 ## 📊 Scan Report & Conclusion
-The port scanning and enumeration phases successfully identified the attack surface of the Metasploitable 2 target. Multiple open ports providing various network services (including FTP, SSH, HTTP, and SMB) were discovered. These results provide the foundational footprinting data required for the next phases of vulnerability assessment and exploitation.
+The comprehensive network scanning phase successfully mapped the topology and attack surface of the authorized Metasploitable 2 target (`10.145.8.91`). The scans revealed a highly vulnerable Linux-based system exposing multiple critical services, including FTP (vsftpd 2.3.4), SSH, Telnet, and an insecure Apache web server. The integration of version detection and NSE scripting confirmed several severe misconfigurations, such as anonymous FTP login access. These results provide the foundational intelligence required to proceed to the vulnerability assessment and exploitation phases.
 
 ---
 
 ## ⚖️ Authorization & Disclaimer
-This activity was performed against an authorized, locally hosted VMware/VirtualBox laboratory environment containing a deliberately vulnerable Metasploitable target. This project was conducted strictly for educational and cybersecurity training purposes. Network scanning and penetration testing should **only** be performed against systems for which explicit, written authorization has been obtained.
+This activity was performed against an authorized, locally hosted virtual laboratory environment containing a deliberately vulnerable Metasploitable target. This project was conducted strictly for educational and cybersecurity training purposes. Network scanning, reconnaissance, and penetration testing should **only** be performed against systems for which explicit, written authorization has been obtained.
