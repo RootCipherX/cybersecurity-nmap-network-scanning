@@ -27,7 +27,7 @@ Nmap (Network Mapper) is an industry-standard, open-source utility used to disco
 ## Objective
 To perform comprehensive network reconnaissance against an authorized Metasploitable laboratory target. The objective is to identify live hosts, discover exposed TCP/UDP ports, enumerate service versions, and detect potential vulnerabilities using the Nmap Scripting Engine (NSE).
 
-## 🛠️ Lab Environment
+## Lab Environment
 *   **Operating System:** Kali Linux
 *   **Attacker IP:** `10.145.8.153`
 *   **Target Environment:** Local Virtual Laboratory Network
